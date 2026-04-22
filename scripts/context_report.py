@@ -95,24 +95,6 @@ def health_indicator(pct_used: float) -> str:
     return "🟢"
 
 
-def capacity_guidance(turns_remaining: int, pct_used: float) -> str:
-    """Return practical guidance on what can fit in remaining context.
-    
-    Based on actual turns remaining from session history.
-    Only triggers at 60%+ usage to avoid noise in fresh sessions.
-    """
-    if pct_used < 60 or turns_remaining <= 0:
-        return ""
-    
-    if turns_remaining < 10:
-        return "⚠️ Barely room for a quick follow-up. Use /new for fresh work."
-    if turns_remaining < 25:
-        return "📋 Room for a focused task — single edit, quick debug, short answer."
-    if turns_remaining < 50:
-        return "🔧 Comfortable for moderate work — multi-file edit, skill update, research pass."
-    return "✅ Plenty of room for complex work."
-
-
 def make_bar(pct: float, width: int = 20) -> str:
     """Create a unicode progress bar. pct = 0..100 (percentage used)."""
     filled = round(width * pct / 100)
@@ -161,9 +143,6 @@ def build_compact_report(session: dict) -> str:
             avg_g = sum(growths) / len(growths)
             turns = int(remaining / avg_g)
             parts.append(f"~{turns} turns left")
-            guidance = capacity_guidance(turns, pct_used)
-            if guidance:
-                parts.append(guidance)
 
     # Cache hit rate (from latest response — most accurate for real-time)
     cache_read = latest.get("cacheRead", 0)
@@ -244,9 +223,6 @@ def build_detailed_report(session: dict) -> str:
             lines.append("Trends")
             lines.append(f"• Avg growth per turn: ~{fmt(int(avg_g))} tokens")
             lines.append(f"• Estimated turns remaining: ~{turns}")
-            guidance = capacity_guidance(turns, pct_used)
-            if guidance:
-                lines.append(f"• {guidance}")
 
     # Session stats
     # Cache hit rate (from latest response)

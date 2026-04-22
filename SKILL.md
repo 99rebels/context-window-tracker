@@ -106,14 +106,30 @@ The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%).
 - 🟡 60–80% used — getting tight
 - 🔴 Over 80% used — consider wrapping up
 
-## Guidance Rules
+## Guidance
 
-The report presents facts. Only add actionable guidance when:
-1. **Context is above 80%** — mention that `/compact` can free space, or `/new` starts fresh
-2. **A specific file dominates** — note its size but don't prescribe action (e.g. "MEMORY.md accounts for 2.3K tokens" not "you should trim MEMORY.md")
-3. **Cache hit rate is below 50%** — note it, don't diagnose why
+The script outputs raw data. The LLM adds a contextual one-liner based on the conversation.
 
-Never suggest deleting workspace files, editing system config, or changing skill setup. The user owns those decisions.
+**When to add guidance:**
+- Only when context is **60%+ used**
+- Skip for fresh sessions — no need for advice when there's plenty of room
+- Skip if the user just asked for a raw number — give them the number
+
+**How to write it:**
+Look at the turns remaining and what's happening in the conversation. Write one line that's specific to the current task.
+
+Examples:
+- "Room to finish testing the skill and push to ClawHub, but not start a new one from scratch."
+- "We can finish the blog post draft, but the Claude handoff for editing should probably wait for a fresh session."
+- "Tight — let's wrap up the config changes and commit. Anything else should go in /new."
+- "Plenty of room. Keep going."
+
+**Rules:**
+- One line max. No paragraphs.
+- Reference the actual task, not generic categories.
+- Don't prescribe what the user should do — describe what fits.
+- If you're not sure what the task is, fall back to a generic note or skip it.
+- Never suggest deleting workspace files or changing system config.
 
 ## What's Exact vs Estimated
 
