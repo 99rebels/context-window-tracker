@@ -111,18 +111,19 @@ The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%).
 The script outputs raw data. The LLM adds a contextual one-liner based on the conversation.
 
 **When to add guidance:**
-- Only when context is **60%+ used**
+- Only when context is **75%+ used**
 - Skip for fresh sessions — no need for advice when there's plenty of room
 - Skip if the user just asked for a raw number — give them the number
+- Applies to **both** compact and detailed modes
 
 **How to write it:**
-Look at the turns remaining and what's happening in the conversation. Write one line that's specific to the current task.
+One line, specific to the current task. For compact mode, append after the one-liner. For detailed mode, append after the final divider.
 
 Examples:
 - "Room to finish testing the skill and push to ClawHub, but not start a new one from scratch."
-- "We can finish the blog post draft, but the Claude handoff for editing should probably wait for a fresh session."
 - "Tight — let's wrap up the config changes and commit. Anything else should go in /new."
 - "Plenty of room. Keep going."
+- Compact: append as `| Tight — wrap up and commit, start fresh for anything new."
 
 **Rules:**
 - One line max. No paragraphs.

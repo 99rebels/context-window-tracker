@@ -120,15 +120,13 @@ def build_compact_report(session: dict) -> str:
     current_total = latest.get("totalTokens", 0)
 
     if context_window <= 0:
-        return f"📊 {fmt(current_total)} tokens used (context limit unknown)"
+        return f"{fmt(current_total)} tokens used (context limit unknown)"
 
     pct_used = current_total / context_window * 100
-    pct_remaining = 100 - pct_used
     remaining = context_window - current_total
-    indicator = health_indicator(pct_used)
     bar = make_bar(pct_used)
 
-    parts = [f"{indicator} {bar} {fmt(current_total)} / {fmt(context_window)} tokens ({pct_str(current_total, context_window)} used)"]
+    parts = [f"{bar} {fmt(current_total)} / {fmt(context_window)} tokens ({pct_str(current_total, context_window)} used)"]
 
     # Turns estimate
     if len(usage_entries) >= 2:
@@ -154,6 +152,9 @@ def build_compact_report(session: dict) -> str:
     return " | ".join(parts)
 
 
+SPACER = "─" * 20  # visible divider for Slack compatibility
+
+
 def build_detailed_report(session: dict) -> str:
     """Build the detailed multi-line report."""
     transcript_path = session.get("sessionFile", "")
@@ -176,7 +177,7 @@ def build_detailed_report(session: dict) -> str:
         remaining = context_window - current_total
         indicator = health_indicator(pct_used)
 
-        lines.append(f"{indicator} Context Usage: {fmt(current_total)} / {fmt(context_window)} ({pct_str(current_total, context_window)})")
+        lines.append(f"Context Usage: {fmt(current_total)} / {fmt(context_window)} ({pct_str(current_total, context_window)})")
     else:
         lines.append(f"📊 Context Usage: {fmt(current_total)} (context limit unknown)")
         context_window = 0
@@ -196,15 +197,16 @@ def build_detailed_report(session: dict) -> str:
 
     if context_window > 0:
         lines.append("")
-        lines.append("── Token Breakdown ──")
+        lines.append(SPACER)
+        lines.append("**── Token Breakdown ──**")
         lines.append(f"• System Prompt: ~{fmt(sys_prompt_tokens)} tokens ({pct_str(sys_prompt_tokens, context_window)})")
         for f in injected_files:
             f_tokens = f["injectedChars"] // 4
             trunc = " [TRUNCATED]" if f.get("truncated") else ""
             lines.append(f"  ├─ {f['name']}: ~{fmt(f_tokens)} tokens{trunc}")
-        lines.append(f"  └─ Framework overhead: ~{fmt(framework_tokens)} (tool schemas, skill list, runtime)")
+        lines.append(f"  └─ 📦 Framework overhead: ~{fmt(framework_tokens)} (tool schemas, skill list, runtime)")
         lines.append(f"• Conversation: ~{fmt(conversation_tokens)} tokens ({pct_str(conversation_tokens, context_window)})")
-        lines.append(f"• Total Used: {fmt(current_total)} ({pct_str(current_total, context_window)})")
+        lines.append(f"• 📊 Total Used: {fmt(current_total)} ({pct_str(current_total, context_window)})")
         lines.append(f"• Remaining: {fmt(remaining)} ({pct_str(remaining, context_window)})")
 
     # Trends
@@ -219,10 +221,10 @@ def build_detailed_report(session: dict) -> str:
         if growths and remaining > 0:
             avg_g = sum(growths) / len(growths)
             turns = int(remaining / avg_g)
-            lines.append("")
-            lines.append("── Trends ──")
-            lines.append(f"• Avg growth per turn: ~{fmt(int(avg_g))} tokens")
-            lines.append(f"• Estimated turns remaining: ~{turns}")
+            lines.append(SPACER)
+            lines.append("**── Trends ──**")
+            lines.append(f"• Avg tokens per turn: ~{fmt(int(avg_g))} tokens")
+            lines.append(f"• ⏳ Estimated turns remaining: ~{turns}")
 
     # Session stats
     # Cache hit rate (from latest response)
@@ -231,13 +233,14 @@ def build_detailed_report(session: dict) -> str:
     thinking_count = _count_thinking(transcript_path)
     total_responses = len(usage_entries)
 
-    lines.append("")
-    lines.append("── Session Stats ──")
-    lines.append(f"• Total input: {fmt(input_tokens)} | Total output: {fmt(output_tokens)} | Cache hit rate: {cache_hit_rate:.0f}%")
+    lines.append(SPACER)
+    lines.append("**── Session Stats ──**")
+    lines.append(f"• 📥 Total input: {fmt(input_tokens)} | 📤 Total output: {fmt(output_tokens)} | Cache hit rate: {cache_hit_rate:.0f}%")
     if thinking_count > 0:
         lines.append(f"• Thinking: active ({thinking_count}/{total_responses} responses)")
     else:
         lines.append(f"• Thinking: not active")
+    lines.append(SPACER)
 
     return "\n".join(lines)
 
