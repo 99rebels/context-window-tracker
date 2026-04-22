@@ -6,9 +6,14 @@ Designed to be run by the LLM agent — output is human-readable text, not JSON.
 
 Usage:
     python3 context_report.py [--session <session_key>] [--agent <agent_name>]
+    python3 context_report.py --auto [--threshold <N>]
 
 If no session/agent specified, auto-detects the current session from sessions.json
 by picking the most recently updated one.
+
+The --auto flag checks a state file and only outputs a report if the turn count
+has increased by >= threshold (default 10) since the last check. Exits silently
+otherwise. Designed for periodic cron jobs.
 """
 
 import argparse
@@ -19,6 +24,9 @@ from pathlib import Path
 
 OPENCLAW_DIR = Path.home() / ".openclaw"
 AGENTS_DIR = OPENCLAW_DIR / "agents"
+STATE_DIR = OPENCLAW_DIR / "workspace" / "skills" / "context-window-tracker"
+STATE_FILE = STATE_DIR / ".auto-check-state.json"
+DEFAULT_THRESHOLD = 10
 
 
 def find_current_session(agent: str | None = None) -> tuple[str, dict, str]:
@@ -27,12 +35,10 @@ def find_current_session(agent: str | None = None) -> tuple[str, dict, str]:
     Returns (session_key, session_data, agent_name).
     """
     if agent is None:
-        # Pick the agent directory that exists (usually "main")
         agent = "main"
 
     store_path = AGENTS_DIR / agent / "sessions" / "sessions.json"
     if not store_path.exists():
-        # Try to find any agent with a sessions.json
         for d in AGENTS_DIR.iterdir():
             if d.is_dir():
                 p = d / "sessions" / "sessions.json"
@@ -52,7 +58,6 @@ def find_current_session(agent: str | None = None) -> tuple[str, dict, str]:
         print("ERROR: No sessions found", file=sys.stderr)
         sys.exit(1)
 
-    # Find most recently updated session
     best_key = max(sessions, key=lambda k: sessions[k].get("updatedAt", ""))
     return best_key, sessions[best_key], agent
 
@@ -158,35 +163,35 @@ def build_report(session_key: str, session: dict, agent: str) -> str:
     lines.append(f"Model: {provider}/{model}")
     lines.append("")
 
-    # System prompt breakdown
+    # Session setup breakdown
     spr = session.get("systemPromptReport", {})
     sp = spr.get("systemPrompt", {})
     sp_chars = sp.get("chars", 0)
     project_chars = sp.get("projectContextChars", 0)
     framework_chars = sp.get("nonProjectContextChars", 0)
 
-    # Estimate system prompt tokens from first response
+    # Estimate session setup tokens from first response
     first_user_chars = get_first_user_message_chars(transcript_path)
     first_user_tokens = first_user_chars // 4
     first_response = usage_entries[0] if usage_entries else None
 
     if first_response:
         first_input = first_response.get("input", 0) + first_response.get("cacheRead", 0)
-        sys_prompt_tokens = max(0, first_input - first_user_tokens)
+        setup_tokens = max(0, first_input - first_user_tokens)
     else:
-        sys_prompt_tokens = sp_chars // 4  # fallback
+        setup_tokens = sp_chars // 4  # fallback
 
-    conversation_tokens = max(0, current_total - sys_prompt_tokens)
+    conversation_tokens = max(0, current_total - setup_tokens)
 
     if context_window > 0:
-        sp_pct = sys_prompt_tokens / context_window * 100
+        setup_pct = setup_tokens / context_window * 100
         conv_pct = conversation_tokens / context_window * 100
     else:
-        sp_pct = 0
+        setup_pct = 0
         conv_pct = 0
 
     lines.append("BREAKDOWN")
-    lines.append(f"  System Prompt: ~{format_number(sys_prompt_tokens)} tokens ({sp_pct:.0f}%)")
+    lines.append(f"  Session Setup: ~{format_number(setup_tokens)} tokens ({setup_pct:.0f}%)")
     if project_chars > 0 or framework_chars > 0:
         lines.append(f"    Workspace files: {format_number(project_chars)} chars")
         lines.append(f"    Framework overhead: {format_number(framework_chars)} chars")
@@ -196,7 +201,6 @@ def build_report(session_key: str, session: dict, agent: str) -> str:
 
     # Turn prediction
     if len(usage_entries) >= 2:
-        # Growth from last N entries
         window = min(10, len(usage_entries))
         recent = usage_entries[-window:]
         growths = []
@@ -236,9 +240,7 @@ def build_report(session_key: str, session: dict, agent: str) -> str:
     lines.append(f"  Assistant turns: {len(usage_entries)}")
     lines.append(f"  Cost this turn: ${latest_cost:.4f} | Session total: ${store_cost:.4f}")
 
-    # Thinking detection — check if any response had unusually high input relative to growth
-    # (thinking tokens get bundled into input for most providers)
-    # We can't detect this perfectly from usage alone, so note the model/provider behavior
+    # Provider thinking behavior
     if provider in ("anthropic",):
         lines.append("  Thinking: bundled into input (Anthropic)")
     elif provider in ("openai",):
@@ -246,18 +248,67 @@ def build_report(session_key: str, session: dict, agent: str) -> str:
     elif provider in ("zai",):
         lines.append("  Thinking: varies by model (z.ai)")
 
-    return "\n".join(lines)
+    return "\n".join(lines), len(usage_entries)
+
+
+def load_auto_state() -> dict:
+    """Load the auto-check state file."""
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {}
+
+
+def save_auto_state(state: dict) -> None:
+    """Save the auto-check state file."""
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=2)
+
+
+def check_auto_threshold(session_key: str, current_turns: int, threshold: int) -> bool:
+    """Check if enough new turns have happened since last auto-report.
+
+    Returns True if we should report (either first time or threshold met).
+    Updates the state file if threshold is met.
+    """
+    state = load_auto_state()
+
+    # Per-session tracking
+    session_state = state.get(session_key, {})
+    last_turns = session_state.get("last_turns", 0)
+
+    if last_turns == 0:
+        # First auto-check for this session — always report
+        session_state["last_turns"] = current_turns
+        state[session_key] = session_state
+        save_auto_state(state)
+        return True
+
+    delta = current_turns - last_turns
+    if delta >= threshold:
+        session_state["last_turns"] = current_turns
+        state[session_key] = session_state
+        save_auto_state(state)
+        return True
+
+    return False
 
 
 def main():
     parser = argparse.ArgumentParser(description="OpenClaw Context Window Reporter")
     parser.add_argument("--session", "-s", help="Session key (e.g. agent:main:whatsapp:direct:+353...)")
     parser.add_argument("--agent", "-a", help="Agent name (default: auto-detect)")
+    parser.add_argument("--auto", action="store_true", help="Only report if N new turns since last check")
+    parser.add_argument("--threshold", "-t", type=int, default=DEFAULT_THRESHOLD,
+                        help=f"Turn threshold for --auto (default: {DEFAULT_THRESHOLD})")
     args = parser.parse_args()
 
     # Find session
     if args.session:
-        # If session key provided, find it in sessions.json
         agent = args.agent or "main"
         store_path = AGENTS_DIR / agent / "sessions" / "sessions.json"
         if not store_path.exists():
@@ -273,7 +324,14 @@ def main():
     else:
         session_key, session, agent = find_current_session(args.agent)
 
-    print(build_report(session_key, session, agent))
+    report, turn_count = build_report(session_key, session, agent)
+
+    if args.auto:
+        if check_auto_threshold(session_key, turn_count, args.threshold):
+            print(report)
+        # else: exit silently
+    else:
+        print(report)
 
 
 if __name__ == "__main__":

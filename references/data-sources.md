@@ -50,6 +50,8 @@ Provides data the transcript doesn't have:
 - `projectContextChars` — workspace files (AGENTS.md, SOUL.md, MEMORY.md, etc.)
 - `nonProjectContextChars` — framework overhead (tool schemas, skill list, runtime config)
 
+The script labels this as "Session Setup" in the output (workspace files + framework overhead combined).
+
 ## How OpenClaw Normalizes Provider Responses
 
 ```

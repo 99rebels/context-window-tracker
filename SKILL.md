@@ -1,15 +1,14 @@
 ---
 name: context-window-tracker
 description: >
-homepage: https://github.com/99rebels/context-window-tracker
-
   Track and report OpenClaw context window usage with a detailed breakdown of what's
   consuming tokens. Use when: user asks about context usage, token usage,
   "how much context am I using", "how full is my context window", "tokens remaining",
   "am I close to the limit", thinking/reasoning token costs, what's eating context
-  (system prompt vs conversation vs overhead), or how many turns are left.
+  (session setup vs conversation vs overhead), or how many turns are left.
   NOT for: estimating tokens for arbitrary text, managing context (compact/prune),
   or cross-session cost aggregation.
+homepage: https://github.com/99rebels/context-window-tracker
 ---
 
 # Context Window Tracker
@@ -44,6 +43,8 @@ Auto-detects the most recently updated session. Options:
 ```
 --session <key>    Target a specific session
 --agent <name>     Target a specific agent (default: main)
+--auto             Only report if 10+ new turns since last check
+--threshold <N>    Override the 10-turn threshold (used with --auto)
 ```
 
 ## Output Example
@@ -53,11 +54,11 @@ CONTEXT: 47.2K / 202.8K (23%)
 Model: zai/glm-5-turbo
 
 BREAKDOWN
-  System Prompt: ~15.6K tokens (8%)
+  Session Setup: ~15.6K tokens (8%)
     Workspace files: 23.0K chars
     Framework overhead: 22.5K chars
   Conversation: ~31.7K tokens (16%)
-  Remaining: 155.6K (77%)
+    Remaining: 155.6K (77%)
 
 TURNS: ~171 remaining (48-1690 range)
   Recent growth: 92-3.2K tokens/turn (avg 908)
@@ -81,7 +82,7 @@ Format output for the current channel — adapt formatting to match what the pla
   • Cost (exact token counts × configured pricing)
 
 ⚠ Estimated:
-  • Per-file system prompt breakdown (chars ÷ 4)
+  • Per-file session setup breakdown (chars ÷ 4)
   • Turns remaining (extrapolated from recent growth)
   • Thinking tokens when provider bundles them
 ```
@@ -89,6 +90,7 @@ Format output for the current channel — adapt formatting to match what the pla
 ## Notes
 
 - Script uses the **transcript** (`.jsonl`) as source of truth, not the session store. The store can lag by several thousand tokens.
-- System prompt tokens derived from: `first_response.input - first_user_message_tokens`
+- Session setup tokens derived from: `first_response.input - first_user_message_tokens`
+- The `--auto` flag tracks turn count in a state file and only outputs when 10+ new turns have happened since last report. Useful for periodic monitoring via cron.
 - See [references/data-sources.md](references/data-sources.md) for file paths and normalization details.
 - See [references/thinking-tokens.md](references/thinking-tokens.md) for how each provider handles reasoning tokens.
