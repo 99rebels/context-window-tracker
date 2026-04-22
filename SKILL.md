@@ -13,15 +13,7 @@ homepage: https://github.com/99rebels/context-window-tracker
 
 # Context Window Tracker
 
-**See exactly how full your context window is — without opening the TUI.**
-
-Built for OpenClaw sessions running through Slack, WhatsApp, or Discord where you can't see the terminal. One script, no dependencies, reads real provider token counts directly from your session files.
-
-## Why
-
-OpenClaw normalizes token counts from every provider (Anthropic, OpenAI, z.ai) into a standard format. This script reads that normalized data — no estimation, no guesswork.
-
-Other frameworks (Claude Code, Cursor, Codex) have their own built-in context displays. This exists because OpenClaw sessions often live in chat apps where those displays aren't visible.
+Shows how much context window is left — without opening the terminal.
 
 ## When to Use
 
@@ -30,7 +22,7 @@ Other frameworks (Claude Code, Cursor, Codex) have their own built-in context di
 - "How full is my context window?"
 - "Tokens remaining"
 - "Am I close to the limit?"
-- "What's eating my context?"
+- Any question about context usage
 
 ## Quick Start
 
@@ -47,61 +39,47 @@ Auto-detects the most recently updated session. Options:
 
 ## Auto-Check Every 10 Messages
 
-The agent maintains a message counter in `.msg-counter.json` (same directory as SKILL.md). On every user message:
+Maintain a message counter in `.msg-counter.json` (same directory as SKILL.md). On every user message:
 
 1. Increment the counter
-2. If the count is a multiple of 10, run the script and append the output to the reply
+2. If the count is a multiple of 10, run the script and append the output to your reply
 3. If not, reply normally
 
-The counter survives compaction. If the file is missing, create it starting at 0. Format:
+The counter survives compaction. If the file is missing, create it starting at 0:
 
 ```json
-{"count": 7}
+{"count": 0}
 ```
 
-## Output Example
+## Output Format
 
 ```
-CONTEXT: 47.2K / 202.8K (23%)
-Model: zai/glm-5-turbo
-
-BREAKDOWN
-  Session Setup: ~15.6K tokens (8%)
-    Workspace files: 23.0K chars
-    Framework overhead: 22.5K chars
-  Conversation: ~31.7K tokens (16%)
-    Remaining: 155.6K (77%)
-
-TURNS: ~171 remaining (48-1690 range)
-  Recent growth: 92-3.2K tokens/turn (avg 908)
-
-SESSION STATS
-  Input: 778 | Output: 37
-  Cache hit rate: 98%
-  Assistant turns: 31
-  Cost this turn: $0.0122 | Session total: $0.3547
-  Thinking: varies by model (z.ai)
+🟢 93% remaining — 15.1K / 202.8K tokens used
+~206 turns left
+Cache hit rate: 96%
 ```
 
-Format output for the current channel — adapt formatting to match what the platform supports.
+### Health Indicator
+
+- 🟢 Under 60% used — plenty of room
+- 🟡 60–80% used — getting tight
+- 🔴 Over 80% used — consider wrapping up
 
 ## What's Exact vs Estimated
 
 ```
 ✅ Exact (from provider):
-  • Per-response input, output, cacheRead, cacheWrite, totalTokens
-  • Context window limit (from model config)
-  • Cost (exact token counts × configured pricing)
+  • Total tokens used (from transcript)
+  • Context window limit (from session store)
+  • Cache hit rate
 
 ⚠ Estimated:
-  • Per-file session setup breakdown (chars ÷ 4)
-  • Turns remaining (extrapolated from recent growth)
-  • Thinking tokens when provider bundles them
+  • Turns remaining (extrapolated from recent token growth per turn)
 ```
 
 ## Notes
 
-- Script uses the **transcript** (`.jsonl`) as source of truth, not the session store. The store can lag by several thousand tokens.
-- Session setup tokens derived from: `first_response.input - first_user_message_tokens`
-- See [references/data-sources.md](references/data-sources.md) for file paths and normalization details.
-- See [references/thinking-tokens.md](references/thinking-tokens.md) for how each provider handles reasoning tokens.
+- Script reads the transcript (`.jsonl`) as source of truth — the session store can lag behind by thousands of tokens
+- If the session store doesn't provide a context window limit (some thread sessions), it shows tokens used without a percentage
+- See [references/data-sources.md](references/data-sources.md) for file paths
+- See [references/thinking-tokens.md](references/thinking-tokens.md) for how reasoning tokens affect counts
