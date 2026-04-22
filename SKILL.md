@@ -66,7 +66,7 @@ The counter survives compaction. If the file is missing, create it starting at 0
 
 ### Compact
 ```
-🟢 [███░░░░░░░░░░░░░░░░░] 85% remaining — 29.8K / 202.8K tokens
+🟢 [███░░░░░░░░░░░░░░░░░] 29.8K / 202.8K tokens (15% used)
 ~736 turns left | Cache: 99%
 ```
 
@@ -74,7 +74,7 @@ The counter survives compaction. If the file is missing, create it starting at 0
 ```
 🟢 Context Usage: 29.8K / 202.8K (15%)
 
-Token Breakdown
+── Token Breakdown ──
 • System Prompt: ~10.2K tokens (5%)
   ├─ AGENTS.md: ~2.0K
   ├─ SOUL.md: ~416
@@ -89,11 +89,11 @@ Token Breakdown
 • Total Used: 29.8K (15%)
 • Remaining: 173.0K (85%)
 
-Trends
+── Trends ──
 • Avg growth per turn: ~1.2K tokens
 • Estimated turns remaining: ~144
 
-Session Stats
+── Session Stats ──
 • Total input: 25K | Total output: 1.8K | Cache hit rate: 99%
 • Thinking: active (3/12 responses)
 ```

@@ -128,7 +128,7 @@ def build_compact_report(session: dict) -> str:
     indicator = health_indicator(pct_used)
     bar = make_bar(pct_used)
 
-    parts = [f"{indicator} {bar} {pct_remaining:.0f}% remaining — {fmt(current_total)} / {fmt(context_window)} tokens"]
+    parts = [f"{indicator} {bar} {fmt(current_total)} / {fmt(context_window)} tokens ({pct_str(current_total, context_window)} used)"]
 
     # Turns estimate
     if len(usage_entries) >= 2:
@@ -196,7 +196,7 @@ def build_detailed_report(session: dict) -> str:
 
     if context_window > 0:
         lines.append("")
-        lines.append("Token Breakdown")
+        lines.append("── Token Breakdown ──")
         lines.append(f"• System Prompt: ~{fmt(sys_prompt_tokens)} tokens ({pct_str(sys_prompt_tokens, context_window)})")
         for f in injected_files:
             f_tokens = f["injectedChars"] // 4
@@ -220,7 +220,7 @@ def build_detailed_report(session: dict) -> str:
             avg_g = sum(growths) / len(growths)
             turns = int(remaining / avg_g)
             lines.append("")
-            lines.append("Trends")
+            lines.append("── Trends ──")
             lines.append(f"• Avg growth per turn: ~{fmt(int(avg_g))} tokens")
             lines.append(f"• Estimated turns remaining: ~{turns}")
 
@@ -232,7 +232,7 @@ def build_detailed_report(session: dict) -> str:
     total_responses = len(usage_entries)
 
     lines.append("")
-    lines.append("Session Stats")
+    lines.append("── Session Stats ──")
     lines.append(f"• Total input: {fmt(input_tokens)} | Total output: {fmt(output_tokens)} | Cache hit rate: {cache_hit_rate:.0f}%")
     if thinking_count > 0:
         lines.append(f"• Thinking: active ({thinking_count}/{total_responses} responses)")
