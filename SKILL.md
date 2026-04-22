@@ -1,6 +1,8 @@
 ---
 name: context-window-tracker
 description: >
+homepage: https://github.com/99rebels/context-window-tracker
+
   Track and report OpenClaw context window usage with a detailed breakdown of what's
   consuming tokens. Use when: user asks about context usage, token usage,
   "how much context am I using", "how full is my context window", "tokens remaining",
