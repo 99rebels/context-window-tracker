@@ -98,7 +98,7 @@ The counter survives compaction. If the file is missing, create it starting at 0
 • Thinking: active (3/12 responses)
 ```
 
-The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%).
+The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%). The bar colour shifts: green under 60%, yellow 60-80%, red over 80%.
 
 ### Health Indicator
 

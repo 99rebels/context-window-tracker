@@ -29,7 +29,6 @@ Usage fields (already normalized by OpenClaw from any provider):
 Provides data the transcript doesn't have:
 - `contextTokens` — the context window limit for this model
 - `systemPromptReport` — per-file character breakdown of the system prompt
-- `estimatedCostUsd` — cumulative session cost
 - `inputTokens`, `outputTokens` — cumulative totals (may lag behind transcript)
 - `sessionFile` — path to the transcript file
 
