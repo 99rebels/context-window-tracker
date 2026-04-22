@@ -13,7 +13,7 @@ homepage: https://github.com/99rebels/context-window-tracker
 
 # Context Window Tracker
 
-Shows how much context window is left — without opening the terminal.
+Shows how much context window is left, without opening the terminal.
 
 ## When to Use
 
@@ -27,7 +27,7 @@ Shows how much context window is left — without opening the terminal.
 ## Two Modes
 
 ### Compact (default)
-One line. Glanceable. Use for auto-checks or quick status.
+One line, glanceable. Good for quick checks.
 
 ```bash
 python3 scripts/context_report.py
@@ -48,88 +48,50 @@ Both modes auto-detect the most recently updated session. Options:
 --detailed         Full breakdown instead of compact one-liner
 ```
 
-## Auto-Check Every 10 Messages
-
-Maintain a message counter in `.msg-counter.json` (same directory as SKILL.md). On every user message:
-
-1. Increment the counter
-2. If the count is a multiple of 10, run the compact script and append the output to your reply
-3. If not, reply normally
-
-The counter survives compaction. If the file is missing, create it starting at 0:
-
-```json
-{"count": 0}
-```
-
 ## Output Format
 
 ### Compact
 ```
-🟢 [███░░░░░░░░░░░░░░░░░] 29.8K / 202.8K tokens (15% used)
-~736 turns left | Cache: 99%
+🟢 [███░░░░░░░░░░░░░░░░░] 29.8K / 202.8K tokens (15% used) | ~736 turns left | Cache: 99%
 ```
 
 ### Detailed
 ```
-🟢 Context Usage: 29.8K / 202.8K (15%)
+🟢 [███░░░░░░░░░░░░░░░░░] Context Usage: 29.8K / 202.8K (15%)
 
-── Token Breakdown ──
-• System Prompt: ~10.2K tokens (5%)
-  ├─ AGENTS.md: ~2.0K
-  ├─ SOUL.md: ~416
-  ├─ TOOLS.md: ~717
-  ├─ IDENTITY.md: ~65
-  ├─ USER.md: ~83
-  ├─ HEARTBEAT.md: ~48
-  ├─ BOOTSTRAP.md: ~18
-  ├─ MEMORY.md: ~2.3K
-  └─ Framework overhead: ~5.3K (tool schemas, skill list, runtime)
-• Conversation: ~19.6K tokens (10%)
-• Total Used: 29.8K (15%)
-• Remaining: 173.0K (85%)
+────────────────────
+**Token Breakdown**
+  System Prompt: ~10.2K tokens (5%)
+    AGENTS.md: ~2.0K
+    SOUL.md: ~416
+    TOOLS.md: ~717
+    MEMORY.md: ~2.3K
+  📦 Framework overhead: ~5.3K (tool schemas, skill list, runtime)
+  Conversation: ~19.6K tokens (10%)
+  📊 Total Used: 29.8K (15%)
+  Remaining: 173.0K (85%)
 
-── Trends ──
-• Avg growth per turn: ~1.2K tokens
-• Estimated turns remaining: ~144
+────────────────────
+**Trends**
+  Avg tokens per turn: ~1.2K tokens
+  ⏳ Estimated turns remaining: ~144
 
-── Session Stats ──
-• Total input: 25K | Total output: 1.8K | Cache hit rate: 99%
-• Thinking: active (3/12 responses)
+────────────────────
+**Session Stats**
+  📥 Total input: 25K | 📤 Total output: 1.8K | Cache hit rate: 99%
+  Thinking: active (3/12 responses)
+────────────────────
 ```
 
-The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%). The bar colour shifts: green under 60%, yellow 60-80%, red over 80%.
-
-### Health Indicator
-
-- 🟢 Under 60% used — plenty of room
-- 🟡 60–80% used — getting tight
-- 🔴 Over 80% used — consider wrapping up
+The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%). The indicator shifts: 🟢 under 60%, 🟡 60-80%, 🔴 over 80%.
 
 ## Guidance
 
-The script outputs raw data. The LLM adds a contextual one-liner based on the conversation.
+When the user asks about context usage, you may optionally include a brief note about remaining capacity based on the script output and the current conversation. Only do this at 75%+ usage. Skip for fresh sessions.
 
-**When to add guidance:**
-- Only when context is **75%+ used**
-- Skip for fresh sessions — no need for advice when there's plenty of room
-- Skip if the user just asked for a raw number — give them the number
-- Applies to **both** compact and detailed modes
-
-**How to write it:**
-One line, specific to the current task. For compact mode, append after the one-liner. For detailed mode, append after the final divider.
-
-Examples:
-- "Room to finish testing the skill and push to ClawHub, but not start a new one from scratch."
-- "Tight — let's wrap up the config changes and commit. Anything else should go in /new."
-- "Plenty of room. Keep going."
-- Compact: append as `| Tight — wrap up and commit, start fresh for anything new."
-
-**Rules:**
-- One line max. No paragraphs.
-- Reference the actual task, not generic categories.
-- Don't prescribe what the user should do — describe what fits.
-- If you're not sure what the task is, fall back to a generic note or skip it.
+Rules:
+- One line max. Reference the actual task, not generic categories.
+- Don't prescribe actions, describe what fits.
 - Never suggest deleting workspace files or changing system config.
 
 ## What's Exact vs Estimated
@@ -148,7 +110,7 @@ Examples:
 
 ## Notes
 
-- Script reads the transcript (`.jsonl`) as source of truth — the session store can lag behind by thousands of tokens
-- If the session store doesn't provide a context window limit (some thread sessions), it shows tokens used without a percentage
+- Script reads the transcript (`.jsonl`) as source of truth. The session store can lag behind by thousands of tokens.
+- If the context window limit is unknown, the script shows tokens used without a percentage.
 - See [references/data-sources.md](references/data-sources.md) for file paths
 - See [references/thinking-tokens.md](references/thinking-tokens.md) for how reasoning tokens affect counts
