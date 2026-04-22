@@ -12,7 +12,7 @@ Each line is JSON. The script reads `type: "message"` entries with `role: "assis
 
 Usage fields (already normalized by OpenClaw from any provider):
 - `input` — non-cached input tokens
-- `output` — generated tokens
+- `output` — generated tokens (includes thinking/reasoning tokens for most providers)
 - `cacheRead` — tokens served from cache
 - `cacheWrite` — new tokens written to cache
 - `totalTokens` — the authoritative total (always accurate regardless of provider)
@@ -30,6 +30,7 @@ Provides data the transcript doesn't have:
 - `contextTokens` — the context window limit for this model
 - `systemPromptReport` — per-file character breakdown of the system prompt
 - `estimatedCostUsd` — cumulative session cost
+- `inputTokens`, `outputTokens` — cumulative totals (may lag behind transcript)
 - `sessionFile` — path to the transcript file
 
 ### System Prompt Report Structure
@@ -49,8 +50,6 @@ Provides data the transcript doesn't have:
 
 - `projectContextChars` — workspace files (AGENTS.md, SOUL.md, MEMORY.md, etc.)
 - `nonProjectContextChars` — framework overhead (tool schemas, skill list, runtime config)
-
-The script labels this as "Session Setup" in the output (workspace files + framework overhead combined).
 
 ## How OpenClaw Normalizes Provider Responses
 
