@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 *.pyo
 .auto-check-state.json
+.msg-counter.json

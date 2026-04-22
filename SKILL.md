@@ -43,8 +43,20 @@ Auto-detects the most recently updated session. Options:
 ```
 --session <key>    Target a specific session
 --agent <name>     Target a specific agent (default: main)
---auto             Only report if 10+ new turns since last check
---threshold <N>    Override the 10-turn threshold (used with --auto)
+```
+
+## Auto-Check Every 10 Messages
+
+The agent maintains a message counter in `.msg-counter.json` (same directory as SKILL.md). On every user message:
+
+1. Increment the counter
+2. If the count is a multiple of 10, run the script and append the output to the reply
+3. If not, reply normally
+
+The counter survives compaction. If the file is missing, create it starting at 0. Format:
+
+```json
+{"count": 7}
 ```
 
 ## Output Example
@@ -91,6 +103,5 @@ Format output for the current channel — adapt formatting to match what the pla
 
 - Script uses the **transcript** (`.jsonl`) as source of truth, not the session store. The store can lag by several thousand tokens.
 - Session setup tokens derived from: `first_response.input - first_user_message_tokens`
-- The `--auto` flag tracks turn count in a state file and only outputs when 10+ new turns have happened since last report. Useful for periodic monitoring via cron.
 - See [references/data-sources.md](references/data-sources.md) for file paths and normalization details.
 - See [references/thinking-tokens.md](references/thinking-tokens.md) for how each provider handles reasoning tokens.
