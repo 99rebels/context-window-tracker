@@ -67,7 +67,7 @@ The counter survives compaction. If the file is missing, create it starting at 0
 ### Compact
 ```
 🟢 [███░░░░░░░░░░░░░░░░░] 85% remaining — 29.8K / 202.8K tokens
-~736 turns left | Cache: 99% | Cost: $0.02
+~736 turns left | Cache: 99%
 ```
 
 ### Detailed
@@ -95,7 +95,6 @@ Trends
 
 Session Stats
 • Total input: 25K | Total output: 1.8K | Cache hit rate: 99%
-• Estimated cost: $0.02
 • Thinking: active (3/12 responses)
 ```
 
@@ -123,7 +122,6 @@ Never suggest deleting workspace files, editing system config, or changing skill
   • Total tokens used (from transcript)
   • Context window limit (from session store)
   • Cache hit rate
-  • Cost (derived from exact token counts)
 
 ⚠ Estimated:
   • Per-file system prompt breakdown (chars ÷ 4)

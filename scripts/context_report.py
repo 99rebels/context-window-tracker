@@ -95,6 +95,24 @@ def health_indicator(pct_used: float) -> str:
     return "🟢"
 
 
+def capacity_guidance(turns_remaining: int, pct_used: float) -> str:
+    """Return practical guidance on what can fit in remaining context.
+    
+    Based on actual turns remaining from session history.
+    Only triggers at 60%+ usage to avoid noise in fresh sessions.
+    """
+    if pct_used < 60 or turns_remaining <= 0:
+        return ""
+    
+    if turns_remaining < 10:
+        return "⚠️ Barely room for a quick follow-up. Use /new for fresh work."
+    if turns_remaining < 25:
+        return "📋 Room for a focused task — single edit, quick debug, short answer."
+    if turns_remaining < 50:
+        return "🔧 Comfortable for moderate work — multi-file edit, skill update, research pass."
+    return "✅ Plenty of room for complex work."
+
+
 def make_bar(pct: float, width: int = 20) -> str:
     """Create a unicode progress bar. pct = 0..100 (percentage used)."""
     filled = round(width * pct / 100)
@@ -118,7 +136,6 @@ def build_compact_report(session: dict) -> str:
 
     latest = usage_entries[-1]
     current_total = latest.get("totalTokens", 0)
-    cost = session.get("estimatedCostUsd", 0)
 
     if context_window <= 0:
         return f"📊 {fmt(current_total)} tokens used (context limit unknown)"
@@ -144,6 +161,9 @@ def build_compact_report(session: dict) -> str:
             avg_g = sum(growths) / len(growths)
             turns = int(remaining / avg_g)
             parts.append(f"~{turns} turns left")
+            guidance = capacity_guidance(turns, pct_used)
+            if guidance:
+                parts.append(guidance)
 
     # Cache hit rate (from latest response — most accurate for real-time)
     cache_read = latest.get("cacheRead", 0)
@@ -151,9 +171,6 @@ def build_compact_report(session: dict) -> str:
     if cache_total > 0 and cache_read > 0:
         hit_rate = cache_read / cache_total * 100
         parts.append(f"Cache: {hit_rate:.0f}%")
-
-    if cost > 0:
-        parts.append(f"Cost: ${cost:.2f}")
 
     return " | ".join(parts)
 
@@ -169,10 +186,8 @@ def build_detailed_report(session: dict) -> str:
 
     latest = usage_entries[-1]
     current_total = latest.get("totalTokens", 0)
-    cost = session.get("estimatedCostUsd", 0)
     input_tokens = session.get("inputTokens", 0)
     output_tokens = session.get("outputTokens", 0)
-    cache_read = session.get("cacheRead", 0)
 
     lines = []
 
@@ -229,6 +244,9 @@ def build_detailed_report(session: dict) -> str:
             lines.append("Trends")
             lines.append(f"• Avg growth per turn: ~{fmt(int(avg_g))} tokens")
             lines.append(f"• Estimated turns remaining: ~{turns}")
+            guidance = capacity_guidance(turns, pct_used)
+            if guidance:
+                lines.append(f"• {guidance}")
 
     # Session stats
     # Cache hit rate (from latest response)
@@ -240,7 +258,6 @@ def build_detailed_report(session: dict) -> str:
     lines.append("")
     lines.append("Session Stats")
     lines.append(f"• Total input: {fmt(input_tokens)} | Total output: {fmt(output_tokens)} | Cache hit rate: {cache_hit_rate:.0f}%")
-    lines.append(f"• Estimated cost: ${cost:.2f}")
     if thinking_count > 0:
         lines.append(f"• Thinking: active ({thinking_count}/{total_responses} responses)")
     else:
