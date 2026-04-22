@@ -95,6 +95,13 @@ def health_indicator(pct_used: float) -> str:
     return "🟢"
 
 
+def make_bar(pct: float, width: int = 20) -> str:
+    """Create a unicode progress bar. pct = 0..100 (percentage used)."""
+    filled = round(width * pct / 100)
+    empty = width - filled
+    return f"[{'█' * filled}{'░' * empty}]"
+
+
 def build_report(session: dict) -> str:
     """Build the context usage report."""
     transcript_path = session.get("sessionFile", "")
@@ -115,8 +122,9 @@ def build_report(session: dict) -> str:
         pct_remaining = 100 - pct_used
         remaining = context_window - current_total
         indicator = health_indicator(pct_used)
+        bar = make_bar(pct_used)
 
-        lines.append(f"{indicator} **{pct_remaining:.0f}% remaining** — {fmt(current_total)} / {fmt(context_window)} tokens used")
+        lines.append(f"{indicator} {bar} {pct_remaining:.0f}% remaining — {fmt(current_total)} / {fmt(context_window)} tokens")
 
         # Turns estimate
         if len(usage_entries) >= 2:

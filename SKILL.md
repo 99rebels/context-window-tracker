@@ -54,10 +54,12 @@ The counter survives compaction. If the file is missing, create it starting at 0
 ## Output Format
 
 ```
-🟢 93% remaining — 15.1K / 202.8K tokens used
-~206 turns left
-Cache hit rate: 96%
+🟢 [███░░░░░░░░░░░░░░░░░] 85% remaining — 29.8K / 202.8K tokens
+~736 turns left
+Cache hit rate: 99%
 ```
+
+The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%).
 
 ### Health Indicator
 
