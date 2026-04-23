@@ -123,11 +123,10 @@ def build_compact_report(session: dict) -> str:
         return f"{fmt(current_total)} tokens used (context limit unknown)"
 
     pct_used = current_total / context_window * 100
-    remaining = context_window - current_total
     bar = make_bar(pct_used)
     indicator = health_indicator(pct_used)
 
-    parts = [f"{indicator} {bar} {fmt(current_total)} / {fmt(context_window)} tokens ({pct_str(current_total, context_window)} used)"]
+    parts = [f"{indicator} {bar} Context Usage: {fmt(current_total)} / {fmt(context_window)} ({pct_str(current_total, context_window)})"]
 
     # Turns estimate
     if len(usage_entries) >= 2:
@@ -138,10 +137,12 @@ def build_compact_report(session: dict) -> str:
             growth = recent[i]["totalTokens"] - recent[i - 1]["totalTokens"]
             if growth > 0:
                 growths.append(growth)
-        if growths and remaining > 0:
+        if growths:
             avg_g = sum(growths) / len(growths)
-            turns = int(remaining / avg_g)
-            parts.append(f"~{turns} turns left")
+            remaining = context_window - current_total
+            if remaining > 0:
+                turns = int(remaining / avg_g)
+                parts.append(f"~{turns} turns left")
 
     # Cache hit rate (from latest response — most accurate for real-time)
     cache_read = latest.get("cacheRead", 0)
@@ -174,7 +175,6 @@ def build_detailed_report(session: dict) -> str:
 
     if context_window > 0:
         pct_used = current_total / context_window * 100
-        pct_remaining = 100 - pct_used
         remaining = context_window - current_total
         indicator = health_indicator(pct_used)
         bar = make_bar(pct_used)
@@ -187,26 +187,24 @@ def build_detailed_report(session: dict) -> str:
 
     # System prompt breakdown
     spr = session.get("systemPromptReport", {})
-    sys_chars = spr.get("systemPrompt", {}).get("chars", 0)
-    project_chars = spr.get("systemPrompt", {}).get("projectContextChars", 0)
     non_project_chars = spr.get("systemPrompt", {}).get("nonProjectContextChars", 0)
     injected_files = spr.get("injectedWorkspaceFiles", [])
 
     # Use first response input as system prompt token estimate
-    sys_prompt_tokens = usage_entries[0].get("input", 0) if usage_entries else sys_chars // 4
+    sys_prompt_tokens = usage_entries[0].get("input", 0) if usage_entries else 0
     conversation_tokens = max(0, current_total - sys_prompt_tokens)
     framework_tokens = non_project_chars // 4
 
     if context_window > 0:
         lines.append("")
         lines.append(SPACER)
-        lines.append("**Token Breakdown**")
-        lines.append(f"  System Prompt: ~{fmt(sys_prompt_tokens)} tokens ({pct_str(sys_prompt_tokens, context_window)})")
+        lines.append("*Token Breakdown*")
+        lines.append(f"System Prompt: ~{fmt(sys_prompt_tokens)} tokens ({pct_str(sys_prompt_tokens, context_window)})")
         for f in injected_files:
             f_tokens = f["injectedChars"] // 4
             trunc = " [TRUNCATED]" if f.get("truncated") else ""
-            lines.append(f"    {f['name']}: ~{fmt(f_tokens)} tokens{trunc}")
-        lines.append(f"  📦 Framework overhead: ~{fmt(framework_tokens)} (tool schemas, skill list, runtime)")
+            lines.append(f"{f['name']}: ~{fmt(f_tokens)} tokens{trunc}")
+        lines.append(f"📦 Framework overhead: ~{fmt(framework_tokens)} (tool schemas, skill list, runtime)")
         lines.append(f"• Conversation: ~{fmt(conversation_tokens)} tokens ({pct_str(conversation_tokens, context_window)})")
         lines.append(f"• 📊 Total Used: {fmt(current_total)} ({pct_str(current_total, context_window)})")
         lines.append(f"• Remaining: {fmt(remaining)} ({pct_str(remaining, context_window)})")
@@ -224,19 +222,18 @@ def build_detailed_report(session: dict) -> str:
             avg_g = sum(growths) / len(growths)
             turns = int(remaining / avg_g)
             lines.append(SPACER)
-            lines.append("**Trends**")
+            lines.append("*Trends*")
             lines.append(f"• Avg tokens per turn: ~{fmt(int(avg_g))} tokens")
             lines.append(f"• ⏳ Estimated turns remaining: ~{turns}")
 
     # Session stats
-    # Cache hit rate (from latest response)
     cache_read = latest.get("cacheRead", 0)
     cache_hit_rate = (cache_read / current_total * 100) if current_total > 0 else 0
     thinking_count = _count_thinking(transcript_path)
     total_responses = len(usage_entries)
 
     lines.append(SPACER)
-    lines.append("**Session Stats**")
+    lines.append("*Session Stats*")
     lines.append(f"• 📥 Total input: {fmt(input_tokens)} | 📤 Total output: {fmt(output_tokens)} | Cache hit rate: {cache_hit_rate:.0f}%")
     if thinking_count > 0:
         lines.append(f"• Thinking: active ({thinking_count}/{total_responses} responses)")
