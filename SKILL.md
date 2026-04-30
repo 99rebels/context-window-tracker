@@ -59,7 +59,7 @@ Show the unicode bar, percentage, estimated turns remaining, and average tokens 
 🟢 [███░░░░░░░░░░░░░░░░░] 15% | ~736 turns left | 427 tokens/turn
 ```
 
-Run the compact script (`python3 scripts/context_report.py`) and extract the bar/percentage. Get avg tokens/turn and turns remaining from the detailed script or session_status. Replace markdown bold markers with plain text before sending to Slack (see Slack rendering fix below).
+Run the compact script (`python3 scripts/context_report.py`) and extract the bar/percentage. Get avg tokens/turn and turns remaining from the detailed script or session_status.
 
 Add a contextual one-liner when context is 75%+ used (see Guidance section). Otherwise, just show the line.
 
@@ -93,7 +93,7 @@ Session Stats
 • Thinking: active (35/200 responses)
 ```
 
-Run the detailed script and replace markdown bold markers with plain text for Slack compatibility.
+Run the detailed script and output the results.
 
 The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%). The bar colour shifts: green under 60%, yellow 60-80%, red over 80%.
 
@@ -112,11 +112,6 @@ The script outputs raw data. The LLM adds a contextual one-liner based on the co
 - Skip for fresh sessions — no need for advice when there's plenty of room
 - Skip if the user just asked for a raw number — give them the number
 - Applies to **both** compact and detailed modes
-
-**Slack rendering fix:**
-The script uses `*text*` for emphasis, which Slack interprets as italics and can break rendering of the detailed output (long messages with many italics markers fail to display). When the channel is Slack:
-- Strip all `*` characters from the script output before displaying
-- Alternatively, use the compact mode (one-liner) which doesn't have this issue
 
 **How to write it:**
 One line, specific to the current task. For compact mode, append after the one-liner. For detailed mode, append after the final divider.
