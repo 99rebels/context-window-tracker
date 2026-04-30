@@ -59,7 +59,7 @@ Show the unicode bar, percentage, estimated turns remaining, and average tokens 
 🟢 [███░░░░░░░░░░░░░░░░░] 15% | ~736 turns left | 427 tokens/turn
 ```
 
-Run the compact script (`python3 scripts/context_report.py`) and extract the bar/percentage. Get avg tokens/turn and turns remaining from the detailed script or session_status. Strip all `*` characters before sending to Slack (see Slack rendering fix below).
+Run the compact script (`python3 scripts/context_report.py`) and extract the bar/percentage. Get avg tokens/turn and turns remaining from the detailed script or session_status. Replace markdown bold markers with plain text before sending to Slack (see Slack rendering fix below).
 
 Add a contextual one-liner when context is 75%+ used (see Guidance section). Otherwise, just show the line.
 
@@ -93,7 +93,7 @@ Session Stats
 • Thinking: active (35/200 responses)
 ```
 
-Run the detailed script and strip all `*` characters for Slack compatibility.
+Run the detailed script and replace markdown bold markers with plain text for Slack compatibility.
 
 The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%). The bar colour shifts: green under 60%, yellow 60-80%, red over 80%.
 
