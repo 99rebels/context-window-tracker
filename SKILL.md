@@ -103,28 +103,7 @@ The bar uses `█` (filled) and `░` (empty) across 20 segments (each = 5%). Th
 - 🟡 60–80% used — getting tight
 - 🔴 Over 80% used — consider wrapping up
 
-## Auto-Check (Opt-In)
-
-The compact report can run automatically every 10 messages. This is **disabled by default** — the user must explicitly enable it.
-
-To enable, the user must say something like "auto-check my context" or "enable context auto-check". Once enabled:
-
-1. Maintain a message counter in `.msg-counter.json` (same directory as SKILL.md)
-2. On every user message, increment the counter
-3. If the count is a multiple of 10, run the compact script and append the output to your reply
-4. If not, reply normally
-
-The counter survives compaction. If the file is missing, create it starting at 0:
-
-```json
-{"count": 0}
-```
-
-To disable, the user can say "disable context auto-check" — delete the counter file and stop checking.
-
-**Important:** Never enable this automatically. Only enable when the user explicitly asks.
-
-## Guidance
+## Notes
 
 The script outputs raw data. The LLM adds a contextual one-liner based on the conversation.
 
